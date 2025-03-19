@@ -3,13 +3,15 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+require('dotenv').config();
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect('mongodb+srv://cesarcayaffa0:admin123@cluster0.xhaajgp.mongodb.net/myapp?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+const jwtSecret = process.env.JWT_SECRET;
 
 const userSchema = new mongoose.Schema({
   name: String,
@@ -45,7 +47,7 @@ app.post('/create-user', async (req, res) => {
   await user.save();
 
   // Generate a token and send it in the response
-  const token = jwt.sign({ _id: user._id }, 'your_jwt_secret');
+  const token = jwt.sign({ _id: user._id }, jwtSecret);
   res.header('x-auth-token', token).send('User created successfully');
 });
 
@@ -65,7 +67,7 @@ app.post('/login', async (req, res) => {
   }
 
   // Generate a token and send it in the response
-  const token = jwt.sign({ _id: user._id }, 'your_jwt_secret');
+  const token = jwt.sign({ _id: user._id }, jwtSecret);
 
   res.header('x-auth-token', token).json({ message: 'Login successful', name: user.name });
 });
@@ -78,7 +80,7 @@ const authenticate = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, 'your_jwt_secret');
+    const decoded = jwt.verify(token, jwtSecret);
     req.user = decoded;
     next();
   } catch (ex) {
